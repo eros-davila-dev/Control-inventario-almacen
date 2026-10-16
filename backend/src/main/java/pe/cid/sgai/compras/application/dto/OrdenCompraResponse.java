@@ -41,6 +41,8 @@ public record OrdenCompraResponse(
             String unidadMedida,
             boolean controlaLote,
             boolean controlaVencimiento,
+            boolean requiereCadenaFrio,
+            int vidaUtilMinimaDias,
             BigDecimal cantidad,
             BigDecimal cantidadRecibida,
             BigDecimal pendiente,

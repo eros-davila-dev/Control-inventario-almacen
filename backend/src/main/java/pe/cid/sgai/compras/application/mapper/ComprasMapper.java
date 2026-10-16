@@ -51,6 +51,8 @@ public interface ComprasMapper {
     @Mapping(target = "unidadMedida", source = "producto.unidadMedida.codigo")
     @Mapping(target = "controlaLote", source = "producto.controlaLote")
     @Mapping(target = "controlaVencimiento", source = "producto.controlaVencimiento")
+    @Mapping(target = "requiereCadenaFrio", expression = "java(linea.getProducto().requiereCadenaFrio())")
+    @Mapping(target = "vidaUtilMinimaDias", source = "producto.vidaUtilMinimaDias")
     @Mapping(target = "pendiente", expression = "java(linea.pendiente())")
     OrdenCompraResponse.LineaOrdenCompraResponse aResponse(OrdenCompraLinea linea);
 

@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+/* El tema oscuro se controla con la clase .dark en <html>, no solo con la
+   preferencia del sistema: el usuario puede forzarlo desde el encabezado. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Identidad clinica de CID: teal medico sobre fondos neutros */
+  --color-brand-50: oklch(0.977 0.013 180);
+  --color-brand-100: oklch(0.947 0.03 180);
+  --color-brand-200: oklch(0.9 0.06 180);
+  --color-brand-300: oklch(0.83 0.09 180);
+  --color-brand-400: oklch(0.74 0.11 180);
+  --color-brand-500: oklch(0.65 0.12 180);
+  --color-brand-600: oklch(0.56 0.11 182);
+  --color-brand-700: oklch(0.47 0.09 184);
+  --color-brand-800: oklch(0.38 0.07 186);
+  --color-brand-900: oklch(0.3 0.055 188);
+  --color-brand-950: oklch(0.22 0.04 190);
+
+  /* Tokens semanticos: los componentes usan estos, nunca colores crudos */
+  --color-surface: oklch(1 0 0);
+  --color-surface-muted: oklch(0.975 0.004 240);
+  --color-surface-raised: oklch(1 0 0);
+  --color-border: oklch(0.9 0.006 240);
+  --color-border-strong: oklch(0.82 0.01 240);
+  --color-fg: oklch(0.24 0.015 250);
+  --color-fg-muted: oklch(0.5 0.015 250);
+  --color-fg-subtle: oklch(0.62 0.012 250);
+
+  --color-success: oklch(0.6 0.13 150);
+  --color-success-soft: oklch(0.95 0.04 150);
+  --color-warning: oklch(0.72 0.15 75);
+  --color-warning-soft: oklch(0.96 0.05 85);
+  --color-danger: oklch(0.58 0.19 25);
+  --color-danger-soft: oklch(0.95 0.04 25);
+  --color-info: oklch(0.6 0.13 250);
+  --color-info-soft: oklch(0.95 0.03 250);
+
+  --radius-card: 0.875rem;
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 1px rgb(15 23 42 / 0.04);
+  --shadow-pop: 0 10px 30px -12px rgb(15 23 42 / 0.25);
+}
+
+/* Redefinicion de los tokens en modo oscuro: un componente escrito con
+   bg-surface / text-fg funciona en ambos temas sin condicionales. */
+@layer base {
+  .dark {
+    --color-surface: oklch(0.21 0.015 250);
+    --color-surface-muted: oklch(0.17 0.014 250);
+    --color-surface-raised: oklch(0.25 0.016 250);
+    --color-border: oklch(0.33 0.015 250);
+    --color-border-strong: oklch(0.42 0.018 250);
+    --color-fg: oklch(0.95 0.005 250);
+    --color-fg-muted: oklch(0.73 0.012 250);
+    --color-fg-subtle: oklch(0.62 0.012 250);
+
+    --color-success-soft: oklch(0.28 0.06 150);
+    --color-warning-soft: oklch(0.3 0.07 80);
+    --color-danger-soft: oklch(0.3 0.08 25);
+    --color-info-soft: oklch(0.28 0.06 250);
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-surface-muted);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    margin: 0;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Foco siempre visible: requisito de accesibilidad (RNF-04) */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
+  ::placeholder {
+    color: var(--color-fg-subtle);
+  }
+
+  /* Respeta a quienes reducen el movimiento por accesibilidad */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Utilidades compuestas reutilizadas por los componentes de UI */
+  .sgai-card {
+    @apply bg-surface border border-border rounded-[var(--radius-card)] shadow-[var(--shadow-card)];
+  }
+
+  .sgai-input {
+    @apply w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg
+           transition-colors placeholder:text-fg-subtle
+           focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30
+           disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-subtle
+           aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/30;
+  }
+
+  .sgai-label {
+    @apply block text-sm font-medium text-fg mb-1.5;
+  }
+
+  .sgai-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+}
