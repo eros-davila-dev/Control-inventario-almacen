@@ -23,7 +23,9 @@ public class ConfiguracionJpa {
             if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
                 return Optional.of(SISTEMA);
             }
-            return Optional.of(auth.getName());
+            String nombre = auth.getName();
+            // Defensa: created_by / updated_by estan limitados a 100 caracteres.
+            return Optional.of(nombre.length() > 100 ? nombre.substring(0, 100) : nombre);
         };
     }
 }

@@ -52,7 +52,8 @@ public class LoteService {
     public PageResponse<LoteResponse> buscar(Long productoId, String texto, EstadoLote estado,
                                              LocalDate venceHasta, Pageable pageable) {
         return PageResponse.de(repository.buscar(productoId,
-                texto == null || texto.isBlank() ? null : texto.trim(), estado, venceHasta, pageable),
+                texto == null || texto.isBlank() ? null : texto.trim(), estado,
+                venceHasta == null ? LocalDate.of(2999, 12, 31) : venceHasta, pageable),
                 this::aResponse);
     }
 

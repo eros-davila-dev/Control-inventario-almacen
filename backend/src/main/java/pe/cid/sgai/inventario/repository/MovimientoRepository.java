@@ -28,10 +28,10 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
             where (:almacenId is null or m.almacenOrigen.id = :almacenId or m.almacenDestino.id = :almacenId)
               and (:tipo is null or m.tipoMovimiento = :tipo)
               and (:estado is null or m.estadoMovimiento = :estado)
-              and (:desde is null or m.fecha >= :desde)
-              and (:hasta is null or m.fecha <= :hasta)
-              and (:texto is null or lower(m.numero) like lower(concat('%', :texto, '%'))
-                   or lower(coalesce(m.documentoNumero, '')) like lower(concat('%', :texto, '%')))
+              and m.fecha >= :desde
+              and m.fecha <= :hasta
+              and (:texto is null or lower(m.numero) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(coalesce(m.documentoNumero, '')) like lower(concat('%', cast(:texto as string), '%')))
             """)
     Page<Movimiento> buscar(@Param("almacenId") Long almacenId,
                             @Param("tipo") TipoMovimiento tipo,

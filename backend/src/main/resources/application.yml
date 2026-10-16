@@ -39,7 +39,7 @@ spring:
     locations: classpath:db/migration
   mvc:
     problemdetails:
-      enabled: true
+      enabled: false
   threads:
     virtual:
       enabled: true

@@ -34,8 +34,8 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
             where (:almacenId is null or s.almacen.id = :almacenId)
               and (:productoId is null or s.producto.id = :productoId)
               and (:categoriaId is null or s.producto.categoria.id = :categoriaId)
-              and (:texto is null or lower(s.producto.nombre) like lower(concat('%', :texto, '%'))
-                   or lower(s.producto.codigo) like lower(concat('%', :texto, '%')))
+              and (:texto is null or lower(s.producto.nombre) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(s.producto.codigo) like lower(concat('%', cast(:texto as string), '%')))
               and (:soloConSaldo = false or s.cantidad > 0)
             """)
     Page<Stock> buscar(@Param("almacenId") Long almacenId,
@@ -77,6 +77,23 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     @Query("select s from Stock s where s.lote.id = :loteId and s.cantidad > 0")
     List<Stock> porLote(@Param("loteId") Long loteId);
 
+    /**
+     * Celdas con saldo de un producto en un almacen para un lote concreto
+     * (o sin lote). Se usa al dar salida cuando no se indica la ubicacion:
+     * el saldo puede estar repartido en varias ubicaciones.
+     */
+    @Query("""
+            select s from Stock s
+            where s.producto.id = :productoId
+              and s.almacen.id = :almacenId
+              and ((:loteId is null and s.lote is null) or s.lote.id = :loteId)
+              and s.cantidad > s.cantidadReservada
+            order by s.ubicacion.id asc nulls first, s.id asc
+            """)
+    List<Stock> celdasConSaldo(@Param("productoId") Long productoId,
+                               @Param("almacenId") Long almacenId,
+                               @Param("loteId") Long loteId);
+
     /** Saldo consolidado por producto y almacen, base de reposicion y valorizacion. */
     @Query("""
             select new pe.cid.sgai.inventario.application.dto.StockAgregadoDto(
@@ -86,8 +103,8 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
             from Stock s join s.producto p join s.almacen a
             where (:almacenId is null or a.id = :almacenId)
               and (:categoriaId is null or p.categoria.id = :categoriaId)
-              and (:texto is null or lower(p.nombre) like lower(concat('%', :texto, '%'))
-                   or lower(p.codigo) like lower(concat('%', :texto, '%')))
+              and (:texto is null or lower(p.nombre) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(p.codigo) like lower(concat('%', cast(:texto as string), '%')))
               and p.activo = true
             group by p.id, p.codigo, p.nombre, p.unidadMedida.codigo, a.id, a.nombre,
                      p.stockMinimo, p.puntoReorden, p.stockMaximo, p.costoPromedio, p.critico

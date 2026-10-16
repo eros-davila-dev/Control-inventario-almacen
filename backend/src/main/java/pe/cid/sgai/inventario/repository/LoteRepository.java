@@ -27,10 +27,10 @@ public interface LoteRepository extends JpaRepository<Lote, Long> {
     @Query("""
             select l from Lote l
             where (:productoId is null or l.producto.id = :productoId)
-              and (:texto is null or lower(l.codigoLote) like lower(concat('%', :texto, '%'))
-                   or lower(l.producto.nombre) like lower(concat('%', :texto, '%')))
+              and (:texto is null or lower(l.codigoLote) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(l.producto.nombre) like lower(concat('%', cast(:texto as string), '%')))
               and (:estado is null or l.estadoLote = :estado)
-              and (:venceHasta is null or l.fechaVencimiento <= :venceHasta)
+              and (l.fechaVencimiento is null or l.fechaVencimiento <= :venceHasta)
             """)
     Page<Lote> buscar(@Param("productoId") Long productoId,
                       @Param("texto") String texto,

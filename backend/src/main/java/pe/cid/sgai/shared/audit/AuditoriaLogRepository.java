@@ -13,12 +13,12 @@ public interface AuditoriaLogRepository extends JpaRepository<AuditoriaLog, Long
 
     @Query("""
             select a from AuditoriaLog a
-            where (:usuario is null or lower(a.usuario) like lower(concat('%', :usuario, '%')))
+            where (:usuario is null or lower(a.usuario) like lower(concat('%', cast(:usuario as string), '%')))
               and (:entidad is null or a.entidad = :entidad)
               and (:entidadId is null or a.entidadId = :entidadId)
               and (:accion is null or a.accion = :accion)
-              and (:desde is null or a.fecha >= :desde)
-              and (:hasta is null or a.fecha <= :hasta)
+              and a.fecha >= :desde
+              and a.fecha <= :hasta
             """)
     Page<AuditoriaLog> buscar(@Param("usuario") String usuario,
                               @Param("entidad") String entidad,

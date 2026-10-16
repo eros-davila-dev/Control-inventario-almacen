@@ -28,9 +28,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("""
             select p from Producto p
             where (:texto is null
-                   or lower(p.codigo) like lower(concat('%', :texto, '%'))
-                   or lower(p.nombre) like lower(concat('%', :texto, '%'))
-                   or lower(coalesce(p.marca, '')) like lower(concat('%', :texto, '%')))
+                   or lower(p.codigo) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(p.nombre) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(coalesce(p.marca, '')) like lower(concat('%', cast(:texto as string), '%')))
               and (:categoriaId is null or p.categoria.id = :categoriaId)
               and (:tipo is null or p.tipoProducto = :tipo)
               and (:clasificacion is null or p.clasificacionAbc = :clasificacion)

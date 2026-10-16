@@ -33,10 +33,10 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Query("""
             select distinct u from Usuario u left join u.roles r
             where (:texto is null
-                   or lower(u.username) like lower(concat('%', :texto, '%'))
-                   or lower(u.nombres) like lower(concat('%', :texto, '%'))
-                   or lower(u.apellidos) like lower(concat('%', :texto, '%'))
-                   or lower(u.email) like lower(concat('%', :texto, '%')))
+                   or lower(u.username) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(u.nombres) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(u.apellidos) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(u.email) like lower(concat('%', cast(:texto as string), '%')))
               and (:rolId is null or r.id = :rolId)
               and (:activo is null or u.activo = :activo)
             """)

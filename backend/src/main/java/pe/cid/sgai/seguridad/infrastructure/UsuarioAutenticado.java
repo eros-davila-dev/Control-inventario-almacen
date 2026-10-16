@@ -1,5 +1,7 @@
 package pe.cid.sgai.seguridad.infrastructure;
 
+import org.springframework.security.core.AuthenticatedPrincipal;
+
 import java.util.Set;
 
 /**
@@ -14,7 +16,17 @@ public record UsuarioAutenticado(
         Set<String> permisos,
         Set<Long> almacenIds,
         boolean debeCambiarPassword
-) {
+) implements AuthenticatedPrincipal {
+
+    /**
+     * Nombre con el que Spring Security identifica al principal. Es el valor que
+     * queda en {@code created_by} / {@code updated_by} y en la pista de auditoria,
+     * por lo que debe ser el username y no la representacion del objeto.
+     */
+    @Override
+    public String getName() {
+        return username;
+    }
 
     public boolean esAdministrador() {
         return roles.contains("ADMIN");

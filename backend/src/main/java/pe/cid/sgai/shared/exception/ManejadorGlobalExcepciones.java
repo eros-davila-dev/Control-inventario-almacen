@@ -3,6 +3,8 @@ package pe.cid.sgai.shared.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
  * Nunca expone stack traces ni mensajes internos (RNF-01).
  */
 @Slf4j
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
 public class ManejadorGlobalExcepciones {
 

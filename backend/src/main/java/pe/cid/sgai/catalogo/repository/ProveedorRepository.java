@@ -20,9 +20,9 @@ public interface ProveedorRepository extends JpaRepository<Proveedor, Long> {
     @Query("""
             select p from Proveedor p
             where (:texto is null
-                   or lower(p.razonSocial) like lower(concat('%', :texto, '%'))
-                   or p.ruc like concat('%', :texto, '%')
-                   or lower(coalesce(p.nombreComercial, '')) like lower(concat('%', :texto, '%')))
+                   or lower(p.razonSocial) like lower(concat('%', cast(:texto as string), '%'))
+                   or p.ruc like concat('%', cast(:texto as string), '%')
+                   or lower(coalesce(p.nombreComercial, '')) like lower(concat('%', cast(:texto as string), '%')))
               and (:activo is null or p.activo = :activo)
             """)
     Page<Proveedor> buscar(@Param("texto") String texto, @Param("activo") Boolean activo, Pageable pageable);

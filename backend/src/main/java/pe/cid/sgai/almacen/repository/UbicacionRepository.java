@@ -20,8 +20,8 @@ public interface UbicacionRepository extends JpaRepository<Ubicacion, Long> {
     @Query("""
             select u from Ubicacion u
             where (:almacenId is null or u.almacen.id = :almacenId)
-              and (:texto is null or lower(u.codigo) like lower(concat('%', :texto, '%'))
-                   or lower(coalesce(u.descripcion, '')) like lower(concat('%', :texto, '%')))
+              and (:texto is null or lower(u.codigo) like lower(concat('%', cast(:texto as string), '%'))
+                   or lower(coalesce(u.descripcion, '')) like lower(concat('%', cast(:texto as string), '%')))
             """)
     Page<Ubicacion> buscar(@Param("almacenId") Long almacenId, @Param("texto") String texto,
                            Pageable pageable);

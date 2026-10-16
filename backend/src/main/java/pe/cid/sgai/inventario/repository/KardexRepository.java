@@ -27,8 +27,8 @@ public interface KardexRepository extends JpaRepository<Kardex, Long> {
             select k from Kardex k
             where k.productoId = :productoId
               and (:almacenId is null or k.almacenId = :almacenId)
-              and (:desde is null or k.fecha >= :desde)
-              and (:hasta is null or k.fecha <= :hasta)
+              and k.fecha >= :desde
+              and k.fecha <= :hasta
             order by k.fecha asc, k.id asc
             """)
     Page<Kardex> kardexDe(@Param("productoId") Long productoId,
@@ -41,8 +41,8 @@ public interface KardexRepository extends JpaRepository<Kardex, Long> {
             select k from Kardex k
             where k.productoId = :productoId
               and (:almacenId is null or k.almacenId = :almacenId)
-              and (:desde is null or k.fecha >= :desde)
-              and (:hasta is null or k.fecha <= :hasta)
+              and k.fecha >= :desde
+              and k.fecha <= :hasta
             order by k.fecha asc, k.id asc
             """)
     List<Kardex> kardexCompleto(@Param("productoId") Long productoId,

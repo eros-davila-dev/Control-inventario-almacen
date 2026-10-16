@@ -27,6 +27,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class KardexService {
 
+    private static final LocalDate FECHA_MINIMA = LocalDate.of(2000, 1, 1);
+    private static final LocalDate FECHA_MAXIMA = LocalDate.of(2999, 12, 31);
+
     private final KardexRepository repository;
     private final InventarioMapper mapper;
 
@@ -71,12 +74,14 @@ public class KardexService {
     @Transactional(readOnly = true)
     public PageResponse<KardexResponse> consultar(Long productoId, Long almacenId, LocalDate desde,
                                                   LocalDate hasta, Pageable pageable) {
-        return PageResponse.de(repository.kardexDe(productoId, almacenId, desde, hasta, pageable),
+        return PageResponse.de(repository.kardexDe(productoId, almacenId,
+                desde == null ? FECHA_MINIMA : desde, hasta == null ? FECHA_MAXIMA : hasta, pageable),
                 mapper::aResponse);
     }
 
     @Transactional(readOnly = true)
     public List<Kardex> completo(Long productoId, Long almacenId, LocalDate desde, LocalDate hasta) {
-        return repository.kardexCompleto(productoId, almacenId, desde, hasta);
+        return repository.kardexCompleto(productoId, almacenId,
+                desde == null ? FECHA_MINIMA : desde, hasta == null ? FECHA_MAXIMA : hasta);
     }
 }

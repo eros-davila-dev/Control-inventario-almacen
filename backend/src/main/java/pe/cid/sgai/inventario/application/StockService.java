@@ -20,8 +20,12 @@ import pe.cid.sgai.shared.util.CantidadUtil;
 import pe.cid.sgai.shared.util.FechaUtil;
 import pe.cid.sgai.shared.web.PageResponse;
 
+import pe.cid.sgai.shared.exception.CodigoError;
+import pe.cid.sgai.shared.exception.NegocioException;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -125,6 +129,56 @@ public class StockService {
                                 lote == null ? "" : " lote " + lote.getCodigoLote())));
         stock.descontar(cantidad);
         return repository.saveAndFlush(stock);
+    }
+
+    /**
+     * Reparte la cantidad a retirar entre las celdas de stock que la contienen.
+     * Si se indica la ubicacion se usa solo esa celda; si no, se consumen las
+     * celdas del lote en orden de ubicacion. Evita el error de buscar el saldo
+     * en una celda "sin ubicacion" cuando la mercaderia esta ubicada.
+     */
+    @Transactional(readOnly = true)
+    public List<EstrategiaAsignacionLote.Asignacion> distribuirSalida(
+            Producto producto, Almacen almacen, Lote lote, Ubicacion ubicacion, BigDecimal cantidad) {
+        BigDecimal pendiente = CantidadUtil.cantidad(cantidad);
+        List<Stock> celdas;
+        if (ubicacion != null) {
+            celdas = repository.buscarCelda(producto.getId(), almacen.getId(),
+                            lote == null ? null : lote.getId(), ubicacion.getId())
+                    .map(List::of)
+                    .orElse(List.of());
+        } else {
+            celdas = repository.celdasConSaldo(producto.getId(), almacen.getId(),
+                    lote == null ? null : lote.getId());
+        }
+        List<EstrategiaAsignacionLote.Asignacion> asignaciones = new ArrayList<>();
+        BigDecimal disponibleTotal = BigDecimal.ZERO;
+        for (Stock celda : celdas) {
+            BigDecimal disponible = CantidadUtil.cantidad(celda.getCantidad());
+            if (!CantidadUtil.esPositiva(disponible)) {
+                continue;
+            }
+            disponibleTotal = disponibleTotal.add(disponible);
+            BigDecimal aTomar = disponible.min(pendiente);
+            asignaciones.add(new EstrategiaAsignacionLote.Asignacion(celda,
+                    CantidadUtil.cantidad(aTomar)));
+            pendiente = pendiente.subtract(aTomar);
+            if (!CantidadUtil.esPositiva(pendiente)) {
+                break;
+            }
+        }
+        if (CantidadUtil.esPositiva(pendiente)) {
+            throw new NegocioException(CodigoError.STOCK_INSUFICIENTE,
+                    "Stock insuficiente de %s en %s%s: disponible %s, solicitado %s".formatted(
+                            producto.getNombre(), almacen.getNombre(),
+                            lote == null ? "" : " lote " + lote.getCodigoLote(),
+                            disponibleTotal.toPlainString(),
+                            CantidadUtil.cantidad(cantidad).toPlainString()))
+                    .con("productoId", producto.getId())
+                    .con("almacenId", almacen.getId())
+                    .con("disponible", CantidadUtil.cantidad(disponibleTotal));
+        }
+        return asignaciones;
     }
 
     @Transactional(readOnly = true)

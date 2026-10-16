@@ -22,6 +22,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuditoriaService {
 
+    /** Limites por defecto del rango de consulta: evitan parametros nulos sin tipo. */
+    private static final Instant INICIO_DE_LOS_TIEMPOS = Instant.parse("2000-01-01T00:00:00Z");
+    private static final Instant FIN_DE_LOS_TIEMPOS = Instant.parse("2999-12-31T23:59:59Z");
+
     private final AuditoriaLogRepository repository;
 
     /**
@@ -55,7 +59,8 @@ public class AuditoriaService {
     public Page<AuditoriaLog> buscar(String usuario, String entidad, String entidadId, String accion,
                                      Instant desde, Instant hasta, Pageable pageable) {
         return repository.buscar(vacioANulo(usuario), vacioANulo(entidad), vacioANulo(entidadId),
-                vacioANulo(accion), desde, hasta, pageable);
+                vacioANulo(accion), desde == null ? INICIO_DE_LOS_TIEMPOS : desde,
+                hasta == null ? FIN_DE_LOS_TIEMPOS : hasta, pageable);
     }
 
     @Transactional(readOnly = true)

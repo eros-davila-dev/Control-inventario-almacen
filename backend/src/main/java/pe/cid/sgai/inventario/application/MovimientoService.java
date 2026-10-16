@@ -59,6 +59,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MovimientoService {
 
+    /** Limites por defecto del rango de fechas en las consultas. */
+    public static final LocalDate FECHA_MINIMA = LocalDate.of(2000, 1, 1);
+    public static final LocalDate FECHA_MAXIMA = LocalDate.of(2999, 12, 31);
+
     private final MovimientoRepository repository;
     private final StockService stockService;
     private final KardexService kardexService;
@@ -80,7 +84,8 @@ public class MovimientoService {
     public PageResponse<MovimientoResponse> buscar(Long almacenId, TipoMovimiento tipo,
                                                    EstadoMovimiento estado, LocalDate desde,
                                                    LocalDate hasta, String texto, Pageable pageable) {
-        return PageResponse.de(repository.buscar(almacenId, tipo, estado, desde, hasta,
+        return PageResponse.de(repository.buscar(almacenId, tipo, estado,
+                desde == null ? FECHA_MINIMA : desde, hasta == null ? FECHA_MAXIMA : hasta,
                 texto == null || texto.isBlank() ? null : texto.trim(), pageable), mapper::aResponse);
     }
 
@@ -163,7 +168,41 @@ public class MovimientoService {
     @Transactional
     @Auditado(accion = "REGISTRAR_SALIDA", entidad = "movimiento")
     public MovimientoResponse registrarSalida(SalidaRequest request, String idempotencyKey) {
+        validarDesviacionFefo(request);
         return mapper.aResponse(registrarSalidaInterna(request, idempotencyKey));
+    }
+
+    /**
+     * Cuando el usuario elige manualmente un lote distinto al que FEFO propone,
+     * se exige el motivo de la desviacion (HU-21). Solo aplica a las salidas que
+     * llegan por la API: las que generan despacho, transferencia o conteo ya
+     * vienen con los lotes resueltos por la propia politica FEFO.
+     */
+    private void validarDesviacionFefo(SalidaRequest request) {
+        // Primero el estado sanitario del lote: da un error mas preciso que FEFO.
+        request.lineas().stream()
+                .filter(linea -> linea.loteId() != null)
+                .map(linea -> loteService.buscarEntidad(linea.loteId()))
+                .filter(lote -> !lote.esDespachable())
+                .findFirst()
+                .ifPresent(lote -> {
+                    throw new NegocioException(CodigoError.LOTE_NO_DISPONIBLE,
+                            "El lote %s esta en estado %s y no puede despacharse"
+                                    .formatted(lote.getCodigoLote(), lote.getEstadoLote()))
+                            .con("loteId", lote.getId())
+                            .con("estado", lote.getEstadoLote().name());
+                });
+        request.lineas().stream()
+                .filter(linea -> linea.loteId() != null)
+                .filter(linea -> !asignacionLoteService.esLoteFefo(linea.productoId(),
+                        request.almacenId(), linea.loteId()))
+                .filter(linea -> linea.motivoNoFefo() == null || linea.motivoNoFefo().isBlank())
+                .findFirst()
+                .ifPresent(linea -> {
+                    throw new NegocioException(CodigoError.REGLA_NEGOCIO,
+                            "El lote elegido no es el proximo a vencer: indique el motivo "
+                                    + "de la desviacion FEFO").con("loteId", linea.loteId());
+                });
     }
 
     @Transactional
@@ -378,50 +417,22 @@ public class MovimientoService {
         }
 
         Lote lote = linea.loteId() == null ? null : loteService.buscarEntidad(linea.loteId());
-        if (lote != null) {
-            if (!lote.esDespachable()) {
-                throw new NegocioException(CodigoError.LOTE_NO_DISPONIBLE,
-                        "El lote %s esta en estado %s y no puede despacharse"
-                                .formatted(lote.getCodigoLote(), lote.getEstadoLote()))
-                        .con("loteId", lote.getId())
-                        .con("estado", lote.getEstadoLote().name());
-            }
-            boolean esFefo = asignacionLoteService.esLoteFefo(producto.getId(), almacen.getId(),
-                    lote.getId());
-            if (!esFefo && (linea.motivoNoFefo() == null || linea.motivoNoFefo().isBlank())) {
-                throw new NegocioException(CodigoError.REGLA_NEGOCIO,
-                        "El lote elegido no es el proximo a vencer: indique el motivo de la desviacion FEFO")
-                        .con("loteId", lote.getId());
-            }
-            Ubicacion ubicacion = resolverUbicacion(linea.ubicacionId(), almacen.getId());
-            MovimientoLinea entidad = MovimientoLinea.builder()
-                    .producto(producto)
-                    .lote(lote)
-                    .ubicacion(ubicacion)
-                    .cantidad(CantidadUtil.cantidad(linea.cantidad()))
-                    .cantidadBase(CantidadUtil.cantidad(linea.cantidad()))
-                    .costoUnitario(CantidadUtil.costo(lote.getCostoUnitario()
-                            .compareTo(BigDecimal.ZERO) > 0
-                            ? lote.getCostoUnitario() : producto.getCostoPromedio()))
-                    .fefoRespetado(esFefo)
-                    .motivoNoFefo(esFefo ? null : linea.motivoNoFefo())
-                    .build();
-            entidad.calcularCostoTotal();
-            resultado.add(entidad);
-            return resultado;
+        if (lote != null && !lote.esDespachable()) {
+            throw new NegocioException(CodigoError.LOTE_NO_DISPONIBLE,
+                    "El lote %s esta en estado %s y no puede despacharse"
+                            .formatted(lote.getCodigoLote(), lote.getEstadoLote()))
+                    .con("loteId", lote.getId())
+                    .con("estado", lote.getEstadoLote().name());
         }
-
-        // Producto sin control de lote: se descuenta de la celda sin lote.
-        MovimientoLinea entidad = MovimientoLinea.builder()
-                .producto(producto)
-                .ubicacion(resolverUbicacion(linea.ubicacionId(), almacen.getId()))
-                .cantidad(CantidadUtil.cantidad(linea.cantidad()))
-                .cantidadBase(CantidadUtil.cantidad(linea.cantidad()))
-                .costoUnitario(CantidadUtil.costo(producto.getCostoPromedio()))
-                .fefoRespetado(true)
-                .build();
-        entidad.calcularCostoTotal();
-        resultado.add(entidad);
+        // Se deja constancia de si el lote consumido era el propuesto por FEFO.
+        boolean esFefo = lote == null || asignacionLoteService.esLoteFefo(producto.getId(),
+                almacen.getId(), lote.getId());
+        // El saldo puede estar repartido en varias ubicaciones del mismo lote:
+        // se consume celda por celda para no dejar el stock descuadrado.
+        Ubicacion ubicacion = resolverUbicacion(linea.ubicacionId(), almacen.getId());
+        stockService.distribuirSalida(producto, almacen, lote, ubicacion, linea.cantidad())
+                .forEach(asignacion -> resultado.add(lineaDesdeStock(asignacion.stock(),
+                        asignacion.cantidad(), esFefo, esFefo ? null : linea.motivoNoFefo())));
         return resultado;
     }
 
