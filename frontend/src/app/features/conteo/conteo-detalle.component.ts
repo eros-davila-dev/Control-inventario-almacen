@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ConteoRequest, LineaToma, TomaInventario } from '../../core/models/conteo.model';
@@ -260,7 +268,14 @@ export class ConteoDetalleComponent {
   });
 
   constructor() {
-    this.cargar();
+    // La carga va en un efecto y no en el constructor: el parametro de la ruta
+    // se asigna despues de construir el componente (Angular lanzaria NG0950).
+    effect(() => {
+      const id = Number(this.id());
+      if (id) {
+        this.cargar(id);
+      }
+    });
   }
 
   protected asGrupo(control: unknown): FormGroup {
@@ -275,8 +290,8 @@ export class ConteoDetalleComponent {
     this.router.navigate(['/conteo/tomas']);
   }
 
-  private cargar(): void {
-    this.servicio.obtener(Number(this.id())).subscribe((toma) => this.aplicar(toma));
+  private cargar(id: number): void {
+    this.servicio.obtener(id).subscribe((toma) => this.aplicar(toma));
   }
 
   private aplicar(toma: TomaInventario): void {

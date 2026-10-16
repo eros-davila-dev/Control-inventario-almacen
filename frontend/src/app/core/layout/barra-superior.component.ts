@@ -17,24 +17,27 @@ import { ResumenAlertas } from '../models/alertas.model';
   template: `
     <header class="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border
                    bg-surface/95 px-3 backdrop-blur sm:px-4">
-      <button type="button" class="rounded-lg p-2 text-fg-muted hover:bg-surface-muted lg:hidden"
+      <button type="button"
+              class="shrink-0 rounded-lg p-2 text-fg-muted hover:bg-surface-muted lg:hidden"
               aria-label="Abrir menu" (click)="menuSolicitado.emit()">
         <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
           <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
         </svg>
       </button>
 
-      <a routerLink="/dashboard" class="flex items-center gap-2 lg:hidden">
+      <a routerLink="/dashboard" class="flex shrink-0 items-center gap-2 lg:hidden">
         <span class="flex size-8 items-center justify-center rounded-lg bg-brand-600 text-sm
                      font-bold text-white">SG</span>
       </a>
 
       <!-- Almacen de trabajo -->
       @if (contexto.almacenes().length) {
-        <label class="ml-auto flex items-center gap-2 lg:ml-0">
+        <!-- min-w-0 permite que el selector se encoja en pantallas pequenas en
+             lugar de empujar los iconos fuera del ancho del dispositivo. -->
+        <label class="ml-auto flex min-w-0 shrink items-center gap-2 lg:ml-0">
           <span class="sr-only">Almacen de trabajo</span>
-          <select class="max-w-[11rem] rounded-lg border border-border bg-surface px-2.5 py-1.5
-                         text-sm text-fg sm:max-w-xs"
+          <select class="w-full min-w-0 max-w-[11rem] truncate rounded-lg border border-border
+                         bg-surface px-2.5 py-1.5 text-sm text-fg sm:max-w-xs"
                   [value]="contexto.seleccionadoId() ?? ''"
                   (change)="cambiarAlmacen($any($event.target).value)">
             @for (almacen of contexto.almacenes(); track almacen.id) {
@@ -44,7 +47,7 @@ import { ResumenAlertas } from '../models/alertas.model';
         </label>
       }
 
-      <div class="ml-auto flex items-center gap-1">
+      <div class="ml-auto flex shrink-0 items-center gap-1">
         <!-- Alertas -->
         <a routerLink="/alertas" class="relative rounded-lg p-2 text-fg-muted hover:bg-surface-muted"
            [attr.aria-label]="'Alertas activas: ' + (resumen()?.total ?? 0)">

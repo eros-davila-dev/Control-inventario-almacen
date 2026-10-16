@@ -121,6 +121,16 @@ cd frontend && npm test -- --watch=false     # 25 pruebas (servicios, pipes, uti
 
 `mvn verify` genera el reporte de cobertura en `backend/target/site/jacoco`.
 
+**Prueba de humo de la interfaz** (requiere el backend y `npm start` en marcha):
+
+```bash
+cd frontend && npm run e2e
+```
+
+Recorre las pantallas de todos los módulos en escritorio, tablet y teléfono, y
+falla si alguna no carga, si hay desbordamiento horizontal o si el navegador
+registra algún error en consola.
+
 Además, `backend/src/test/resources/prueba-funcional-e2e.py` recorre los flujos
 completos (seguridad, costo promedio, FEFO, compras con control de calidad,
 transferencias, conteo físico, anulaciones, alertas y autorización por almacén)
