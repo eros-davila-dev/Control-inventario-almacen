@@ -1,0 +1,13 @@
+sgai:
+  jwt:
+    secret: ${SGAI_JWT_SECRET:ZGV2LXNvbG8tcGFyYS1kZXNhcnJvbGxvLWxvY2FsLXNnYWktY2lkLTIwMjYtY2xhdmUtZGUtNjQtYnl0ZXMtbWluaW1v}
+spring:
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+logging:
+  level:
+    pe.cid.sgai: DEBUG
+    org.hibernate.SQL: INFO

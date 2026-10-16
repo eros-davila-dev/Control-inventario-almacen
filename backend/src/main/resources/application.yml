@@ -1,0 +1,109 @@
+spring:
+  application:
+    name: sgai-cid
+  profiles:
+    default: dev
+  jackson:
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: true
+    serialization:
+      write-dates-as-timestamps: false
+  datasource:
+    url: ${SGAI_DB_URL:jdbc:postgresql://localhost:5432/sgai}
+    username: ${SGAI_DB_USER:sgai}
+    password: ${SGAI_DB_PASSWORD:sgai}
+    hikari:
+      maximum-pool-size: ${SGAI_DB_POOL_MAX:20}
+      minimum-idle: 5
+      connection-timeout: 20000
+      pool-name: sgai-pool
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: sgai
+        jdbc.time_zone: America/Lima
+        jdbc.batch_size: 50
+        order_inserts: true
+        order_updates: true
+        query.in_clause_parameter_padding: true
+  flyway:
+    enabled: true
+    schemas: sgai
+    default-schema: sgai
+    create-schemas: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  mvc:
+    problemdetails:
+      enabled: true
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  port: ${SGAI_PORT:8080}
+  servlet:
+    context-path: /
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+  compression:
+    enabled: true
+    mime-types: application/json,text/html,text/css,application/javascript
+  tomcat:
+    max-http-form-post-size: 2MB
+
+sgai:
+  jwt:
+    secret: ${SGAI_JWT_SECRET:}
+    access-token-minutos: ${SGAI_JWT_ACCESS_MIN:15}
+    refresh-token-horas: ${SGAI_JWT_REFRESH_HORAS:8}
+    emisor: sgai-cid
+  seguridad:
+    max-intentos-fallidos: 5
+    ventana-intentos-minutos: 15
+    bloqueo-minutos: 15
+    historico-password: 3
+    login-por-minuto: 10
+  cors:
+    origenes: ${SGAI_CORS_ORIGINS:http://localhost:4200}
+  inventario:
+    permitir-stock-negativo: false
+    tramos-vencimiento-dias: 30,60,90
+    dias-consumo-promedio: 90
+    dias-sin-movimiento: 90
+  zona-horaria: America/Lima
+  moneda: PEN
+  igv: 0.18
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+  info:
+    env:
+      enabled: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: alpha
+    tagsSorter: alpha
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    root: INFO
+    pe.cid.sgai: ${SGAI_LOG_LEVEL:INFO}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:-}] %logger{36} - %msg%n"
